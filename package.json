@@ -1,0 +1,11 @@
+{
+  "name": "documentation",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:researcharchives/documentation.git",
+  "author": "steven89 <steven.salaun@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
