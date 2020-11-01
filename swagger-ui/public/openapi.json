@@ -1,13 +1,13 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "ResearchArchives API",
-    "description": "Documentation of the API for ResearchArchives",
+    "title": "StashResearch API",
+    "description": "Documentation of the API for StashResearch",
     "version": "1.0.0"
   },
   "servers": [
     {
-      "url": "https://api.researcharchives.org/v1",
+      "url": "https://api.stashresearch.org/v2",
       "description": "Main (production) server"
     }
   ],
@@ -21,8 +21,12 @@
       "description": "Users"
     },
     {
-      "name": "projects",
+      "name": "project",
       "description": "Projects"
+    },
+    {
+      "name": "dataSource",
+      "description": "Datasources"
     }
   ],
   "components": {
@@ -36,6 +40,12 @@
     "responses": {
       "UnauthorizedError": {
         "description": "Access token is missing or invalid"
+      },
+      "NotFoundError": {
+        "description": "Resource not found"
+      },
+      "Unprocessed": {
+        "description": "Invalid input"
       }
     }
   },
@@ -54,13 +64,18 @@
             "application/json": {
               "schema": {
                 "type": "object",
+                "required": [
+                  "email",
+                  "password"
+                ],
                 "properties": {
                   "email": {
                     "type": "string",
                     "format": "email"
                   },
                   "password": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1
                   }
                 }
               }
@@ -107,7 +122,8 @@
                 "required": [
                   "email",
                   "password",
-                  "firstName"
+                  "firstName",
+                  "lastName"
                 ],
                 "properties": {
                   "email": {
@@ -115,13 +131,16 @@
                     "format": "email"
                   },
                   "password": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1
                   },
                   "firstName": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1
                   },
                   "lastName": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1
                   }
                 }
               }
@@ -150,7 +169,7 @@
         }
       }
     },
-    "/user": {
+    "/user/me": {
       "get": {
         "tags": [
           "user"
@@ -168,6 +187,1520 @@
           },
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "user"
+        ],
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Update user",
+        "description": "Update user",
+        "requestBody": {
+          "description": "User object",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "firstName": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
+        }
+      }
+    },
+    "/user/me/checkPassword": {
+      "post": {
+        "tags": [
+          "user"
+        ],
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Check user password",
+        "description": "Check user password",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "password"
+                ],
+                "properties": {
+                  "password": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessed"
+          }
+        }
+      }
+    },
+    "/user/{userId}": {
+      "get": {
+        "tags": [
+          "user"
+        ],
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Get other user",
+        "description": "Get other user",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the user to get"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
+        }
+      }
+    },
+    "/user/me/credentials/{provider}": {
+      "get": {
+        "tags": [
+          "user"
+        ],
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Get credentials by provider (google, formr)",
+        "description": "Get credentials by provider (google, formr)",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "provider",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "google",
+                "formr"
+              ]
+            },
+            "required": true,
+            "description": "Name of the data provider"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "user"
+        ],
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Update credentials by provider (only for formr)",
+        "description": "Update credentials by provider (only for formr)",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "provider",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "google",
+                "formr"
+              ]
+            },
+            "required": true,
+            "description": "Name of the data provider"
+          }
+        ],
+        "requestBody": {
+          "description": "Form credential",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "clientId",
+                  "clientSecret",
+                  "provider"
+                ],
+                "properties": {
+                  "clientId": {
+                    "type": "string"
+                  },
+                  "clientSecret": {
+                    "type": "string"
+                  },
+                  "provider": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "user"
+        ],
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Delete credentials by provider (google, formr)",
+        "description": "Delete credentials by provider (google, formr)",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "provider",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "google",
+                "formr"
+              ]
+            },
+            "required": true,
+            "description": "Name of the data provider"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
+        }
+      }
+    },
+    "/user/me/credentials": {
+      "post": {
+        "tags": [
+          "user"
+        ],
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Post credentials (only for formr)",
+        "description": "Post credentials (only for formr)",
+        "requestBody": {
+          "description": "Form credential",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "clientId",
+                  "clientSecret",
+                  "provider"
+                ],
+                "properties": {
+                  "clientId": {
+                    "type": "string"
+                  },
+                  "clientSecret": {
+                    "type": "string"
+                  },
+                  "provider": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
+        }
+      }
+    },
+    "/user/me/verify/{channel}": {
+      "post": {
+        "tags": [
+          "user"
+        ],
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Initiate verification",
+        "description": "Initiate verification",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "channel",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "email",
+                "sms"
+              ]
+            },
+            "required": true,
+            "description": "Name of the channel"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
+        }
+      }
+    },
+    "/user/me/verify": {
+      "post": {
+        "tags": [
+          "user"
+        ],
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Verify email, phone number...",
+        "description": "Verify email, phone number...",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "token"
+                ],
+                "properties": {
+                  "token": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "410": {
+            "description": "Expired request"
+          }
+        }
+      }
+    },
+    "/user/passwordReset": {
+      "post": {
+        "tags": [
+          "user"
+        ],
+        "summary": "Initiate password reset (without token)",
+        "description": "Initiate password reset (without token)",
+        "requestBody": {
+          "description": "email",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/user/me/passwordReset": {
+      "post": {
+        "tags": [
+          "user"
+        ],
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Initiate password reset (with token)",
+        "description": "Initiate password reset (with token)",
+        "responses": {
+          "202": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/user/password": {
+      "put": {
+        "tags": [
+          "user"
+        ],
+        "summary": "Create new password",
+        "description": "Create new password",
+        "requestBody": {
+          "description": "New password",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "password",
+                  "token"
+                ],
+                "properties": {
+                  "password": {
+                    "type": "string"
+                  },
+                  "token": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/user/me/password": {
+      "put": {
+        "tags": [
+          "user"
+        ],
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Create new password",
+        "description": "Create new password",
+        "requestBody": {
+          "description": "New password",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "currentPassword",
+                  "password",
+                  "token"
+                ],
+                "properties": {
+                  "currentPassword": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
+                  "token": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/projects/": {
+      "post": {
+        "tags": [
+          "project"
+        ],
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Create project",
+        "description": "Create project",
+        "requestBody": {
+          "description": "Project object",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9-.]*$"
+                  },
+                  "access": {
+                    "type": "string",
+                    "enum": [
+                      "public",
+                      "private"
+                    ]
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "project"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "withKeys",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "List projects",
+        "description": "List projects",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
+        }
+      }
+    },
+    "/projects/{projectId}": {
+      "get": {
+        "tags": [
+          "project"
+        ],
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Get project by Id",
+        "description": "Get project by Id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "projectId",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the project"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "description": "#/components/responses/NotFoundError"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "project"
+        ],
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Delete project by Id",
+        "description": "Delete project by Id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "projectId",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the project"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "description": "#/components/responses/NotFoundError"
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/key": {
+      "get": {
+        "tags": [
+          "project"
+        ],
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Get project key",
+        "description": "Get project key",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "projectId",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the project"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "description": "#/components/responses/NotFoundError"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "project"
+        ],
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Setup project keys",
+        "description": "Setup project keys",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "projectId",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the project"
+          }
+        ],
+        "requestBody": {
+          "description": "Project keys",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "encryptedPrivateKey"
+                ],
+                "properties": {
+                  "publicKey": {
+                    "type": "string"
+                  },
+                  "encryptedPrivateKey": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "description": "#/components/responses/NotFoundError"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "project"
+        ],
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Reset project keys",
+        "description": "Reset project keys",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "projectId",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the project"
+          }
+        ],
+        "requestBody": {
+          "description": "Project key(s)",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "encryptedPrivateKey"
+                ],
+                "properties": {
+                  "encryptedPrivateKey": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "description": "#/components/responses/NotFoundError"
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/invite": {
+      "post": {
+        "tags": [
+          "project"
+        ],
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Invite someone to a project",
+        "description": "Invite someone to a project",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "projectId",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the project"
+          }
+        ],
+        "requestBody": {
+          "description": "Invitation",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "member"
+                ],
+                "properties": {
+                  "member": {
+                    "type": "object",
+                    "properties": {
+                      "email": {
+                        "type": "string",
+                        "format": "email"
+                      },
+                      "firstName": {
+                        "type": "string"
+                      },
+                      "scope": {
+                        "type": "string"
+                      },
+                      "role": {
+                        "type": "string",
+                        "enum": [
+                          "owner",
+                          "admin",
+                          "researcher",
+                          "viewer"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "description": "#/components/responses/NotFoundError"
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/acceptInvitation": {
+      "post": {
+        "tags": [
+          "project"
+        ],
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Accept project invitation",
+        "description": "Accept project invitation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "projectId",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the project"
+          }
+        ],
+        "requestBody": {
+          "description": "Invitation accept",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "token"
+                ],
+                "properties": {
+                  "token": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "description": "#/components/responses/NotFoundError"
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/declineInvitation": {
+      "post": {
+        "tags": [
+          "project"
+        ],
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Decline project invitation",
+        "description": "Decline project invitation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "projectId",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the project"
+          }
+        ],
+        "requestBody": {
+          "description": "Invitation decline",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "token"
+                ],
+                "properties": {
+                  "token": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "description": "#/components/responses/NotFoundError"
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/dataSources": {
+      "get": {
+        "tags": [
+          "project"
+        ],
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "List dataSources in project",
+        "description": "List dataSources in project",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "projectId",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the project"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "description": "#/components/responses/NotFoundError"
+          }
+        }
+      }
+    },
+    "/project/{projectId}/setupGitUpload": {
+      "post": {
+        "tags": [
+          "project"
+        ],
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Setup git file upload",
+        "description": "Setup git file upload",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "projectId",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the project"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "cloneCommand": {
+                    "type": "string",
+                    "description": "git clone command"
+                  },
+                  "provider": {
+                    "type": "string",
+                    "description": "provider (e.g. github)",
+                    "enum": [
+                      "github"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "description": "#/components/responses/NotFoundError"
+          }
+        }
+      }
+    },
+    "/dataSources": {
+      "post": {
+        "tags": [
+          "dataSource"
+        ],
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Create dataSource",
+        "description": "Create dataSource",
+        "requestBody": {
+          "description": "dataSource object",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "sourceName",
+                  "provider",
+                  "projectId"
+                ],
+                "properties": {
+                  "projectId": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "sourceId": {
+                    "type": "string",
+                    "description": "Required for google"
+                  },
+                  "sourceName": {
+                    "type": "string"
+                  },
+                  "sourceSurveyName": {
+                    "type": "string"
+                  },
+                  "provider": {
+                    "type": "string",
+                    "enum": [
+                      "google",
+                      "formr",
+                      "fileUpload"
+                    ]
+                  },
+                  "columnNames": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "description": "#/components/responses/NotFoundError"
+          }
+        }
+      }
+    },
+    "/dataSources/{id}": {
+      "get": {
+        "tags": [
+          "dataSource"
+        ],
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Get dataSource",
+        "description": "Get dataSource",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the dataSource"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "description": "#/components/responses/NotFoundError"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "dataSource"
+        ],
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Delete dataSource",
+        "description": "Delete dataSource",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the dataSource"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "description": "#/components/responses/NotFoundError"
+          }
+        }
+      }
+    },
+    "/dataSources/{id}/setup": {
+      "post": {
+        "tags": [
+          "dataSource"
+        ],
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Setup dataSource",
+        "description": "Setup dataSource",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the dataSource"
+          }
+        ],
+        "requestBody": {
+          "description": "dataSource object",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "key": {
+                    "type": "string",
+                    "description": "id of the key column"
+                  },
+                  "omit": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "personalData": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "description": "#/components/responses/NotFoundError"
+          }
+        }
+      }
+    },
+    "/dataSources/{id}/startSync": {
+      "post": {
+        "tags": [
+          "dataSource"
+        ],
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Get dataSource",
+        "description": "Get dataSource",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the dataSource"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "description": "#/components/responses/NotFoundError"
+          }
+        }
+      }
+    },
+    "/dataSources/{id}/download": {
+      "post": {
+        "tags": [
+          "dataSource"
+        ],
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Get dataSource",
+        "description": "Get dataSource",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the dataSource"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "description": "#/components/responses/NotFoundError"
+          }
+        }
+      }
+    },
+    "/dataSources/{id}/data": {
+      "get": {
+        "tags": [
+          "dataSource"
+        ],
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Get data",
+        "description": "Get data",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the dataSource"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "description": "#/components/responses/NotFoundError"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "dataSource"
+        ],
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Put data",
+        "description": "Put data",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the dataSource"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "type": "array",
+                    "description": "data array (each element is a row)",
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "checksum": {
+                    "type": "array",
+                    "description": "checksum array of data property",
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "columnNames": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "description": "#/components/responses/NotFoundError"
+          }
+        }
+      }
+    },
+    "/dataSources/{id}/history": {
+      "get": {
+        "tags": [
+          "dataSource"
+        ],
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Get dataSource history",
+        "description": "Get dataSource history",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the dataSource"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "description": "#/components/responses/NotFoundError"
           }
         }
       }

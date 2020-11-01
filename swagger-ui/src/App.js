@@ -22,7 +22,7 @@ class App extends React.Component {
   componentDidMount () {
     SwaggerUI({
       dom_id: `#${DOM_ID}`,
-      url: "https://researcharchives.org/documentation/openapi.json",
+      url: "https://stashresearch.org/documentation/openapi.json",
       plugins: [
         DisableTryItOutPlugin
       ]
